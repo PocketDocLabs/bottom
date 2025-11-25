@@ -260,6 +260,8 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
     let mut temp_state_map: HashMap<u64, TempWidgetState> = HashMap::new();
     let mut disk_state_map: HashMap<u64, DiskTableWidget> = HashMap::new();
     let mut battery_state_map: HashMap<u64, BatteryWidgetState> = HashMap::new();
+    #[cfg(feature = "gpu")]
+    let mut gpu_state_map: HashMap<u64, GpuWidgetState> = HashMap::new();
 
     let autohide_timer = if autohide_time {
         Some(Instant::now())
@@ -448,6 +450,18 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
                             battery_state_map
                                 .insert(widget.widget_id, BatteryWidgetState::default());
                         }
+                        #[cfg(feature = "gpu")]
+                        Gpu => {
+                            gpu_state_map.insert(
+                                widget.widget_id,
+                                GpuWidgetState::new(
+                                    &app_config_fields,
+                                    default_time_value,
+                                    autohide_timer,
+                                    &styling,
+                                ),
+                            );
+                        }
                         _ => {}
                     }
                 }
@@ -479,11 +493,15 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
     };
 
     let use_mem = used_widget_set.get(&Mem).is_some() || used_widget_set.get(&BasicMem).is_some();
+    #[cfg(feature = "gpu")]
+    let use_gpu = get_enable_gpu(args, config) || used_widget_set.get(&Gpu).is_some();
+    #[cfg(not(feature = "gpu"))]
+    let use_gpu = false;
     let used_widgets = UsedWidgets {
         use_cpu: used_widget_set.get(&Cpu).is_some() || used_widget_set.get(&BasicCpu).is_some(),
         use_mem,
         use_cache: use_mem && get_enable_cache_memory(args, config),
-        use_gpu: get_enable_gpu(args, config),
+        use_gpu,
         use_net: used_widget_set.get(&Net).is_some() || used_widget_set.get(&BasicNet).is_some(),
         use_proc: used_widget_set.get(&Proc).is_some(),
         use_disk: used_widget_set.get(&Disk).is_some(),
@@ -523,6 +541,8 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
         temp_state: TempState::init(temp_state_map),
         disk_state: DiskState::init(disk_state_map),
         battery_state: AppBatteryState::init(battery_state_map),
+        #[cfg(feature = "gpu")]
+        gpu_state: GpuState::init(gpu_state_map),
         basic_table_widget_state,
     };
 

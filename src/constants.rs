@@ -191,11 +191,16 @@ pub(crate) const HELP_TEXT: [&[&str]; HELP_CONTENTS_TEXT.len()] = [
 
 pub(crate) const DEFAULT_LAYOUT: &str = r#"
 [[row]]
+  ratio=20
+  [[row.child]]
+    ratio=2
+    type="cpu"
+[[row]]
   ratio=30
   [[row.child]]
-  type="cpu"
+    type="gpu"
 [[row]]
-    ratio=40
+    ratio=30
     [[row.child]]
       ratio=4
       type="mem"
@@ -216,7 +221,7 @@ pub(crate) const DEFAULT_LAYOUT: &str = r#"
 
 pub(crate) const DEFAULT_BATTERY_LAYOUT: &str = r#"
 [[row]]
-  ratio=30
+  ratio=20
   [[row.child]]
     ratio=2
     type="cpu"
@@ -224,7 +229,11 @@ pub(crate) const DEFAULT_BATTERY_LAYOUT: &str = r#"
     ratio=1
     type="battery"
 [[row]]
-    ratio=40
+    ratio=30
+    [[row.child]]
+      type="gpu"
+[[row]]
+    ratio=30
     [[row.child]]
       ratio=4
       type="mem"

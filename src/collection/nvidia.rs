@@ -12,10 +12,61 @@ use crate::{
 
 pub static NVML_DATA: OnceLock<Result<Nvml, NvmlError>> = OnceLock::new();
 
+/// GPU metric type - either power draw or utilization percentage.
+#[derive(Clone, Debug)]
+pub enum GpuMetric {
+    /// Power draw in milliwatts with optional power limit.
+    Power { draw_mw: u32, limit_mw: Option<u32> },
+    /// Utilization as a percentage (0-100).
+    Utilization(f32),
+}
+
+impl GpuMetric {
+    /// Returns the metric as a percentage (0-100).
+    pub fn as_percentage(&self) -> f32 {
+        match self {
+            GpuMetric::Power { draw_mw, limit_mw } => {
+                if let Some(limit) = limit_mw {
+                    if *limit > 0 {
+                        (*draw_mw as f32 / *limit as f32) * 100.0
+                    } else {
+                        0.0
+                    }
+                } else {
+                    // No limit known, can't compute percentage.
+                    0.0
+                }
+            }
+            GpuMetric::Utilization(pct) => *pct,
+        }
+    }
+
+    /// Returns true if this metric represents power data.
+    pub fn is_power(&self) -> bool {
+        matches!(self, GpuMetric::Power { .. })
+    }
+}
+
+impl Default for GpuMetric {
+    fn default() -> Self {
+        GpuMetric::Utilization(0.0)
+    }
+}
+
+/// GPU data with either power draw or utilization.
+#[derive(Clone, Debug, Default)]
+pub struct GpuData {
+    /// GPU name.
+    pub name: String,
+    /// The GPU metric (power or utilization).
+    pub metric: GpuMetric,
+}
+
 pub struct GpusData {
     pub memory: Option<Vec<(String, MemData)>>,
     pub temperature: Option<Vec<TempSensorData>>,
     pub procs: Option<(u64, Vec<HashMap<u32, (u64, u32)>>)>,
+    pub gpu_data: Option<Vec<GpuData>>,
 }
 
 /// Wrapper around Nvml::init
@@ -51,6 +102,7 @@ pub fn get_nvidia_vecs(
             let mut temp_vec = Vec::with_capacity(num_gpu as usize);
             let mut mem_vec = Vec::with_capacity(num_gpu as usize);
             let mut proc_vec = Vec::with_capacity(num_gpu as usize);
+            let mut gpu_data_vec = Vec::with_capacity(num_gpu as usize);
             let mut total_mem = 0;
 
             for i in 0..num_gpu {
@@ -153,6 +205,22 @@ pub fn get_nvidia_vecs(
                             total_mem += mem.total;
                         }
                     }
+
+                    // Collect power data for GPU widget.
+                    if widgets_to_harvest.use_gpu {
+                        if let Ok(name) = device.name() {
+                            if let Ok(power_mw) = device.power_usage() {
+                                let power_limit_mw = device.power_management_limit().ok();
+                                gpu_data_vec.push(GpuData {
+                                    name,
+                                    metric: GpuMetric::Power {
+                                        draw_mw: power_mw,
+                                        limit_mw: power_limit_mw,
+                                    },
+                                });
+                            }
+                        }
+                    }
                 }
             }
 
@@ -169,6 +237,11 @@ pub fn get_nvidia_vecs(
                 },
                 procs: if !proc_vec.is_empty() {
                     Some((total_mem, proc_vec))
+                } else {
+                    None
+                },
+                gpu_data: if !gpu_data_vec.is_empty() {
+                    Some(gpu_data_vec)
                 } else {
                     None
                 },

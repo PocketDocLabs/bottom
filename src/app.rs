@@ -153,6 +153,13 @@ impl App {
             }
         }
 
+        #[cfg(feature = "gpu")]
+        for gpu in self.states.gpu_state.widget_states.values_mut() {
+            if gpu.force_update_data {
+                gpu.set_legend_data(&data_source.gpu_data_harvest);
+            }
+        }
+
         for disk in self.states.disk_state.widget_states.values_mut() {
             if disk.force_update_data {
                 disk.set_table_data(data_source);
@@ -2121,6 +2128,33 @@ impl App {
                     }
                 }
             }
+            #[cfg(feature = "gpu")]
+            BottomWidgetType::Gpu => {
+                if let Some(gpu_widget_state) = self
+                    .states
+                    .gpu_state
+                    .widget_states
+                    .get_mut(&self.current_widget.widget_id)
+                {
+                    let new_time = gpu_widget_state
+                        .current_display_time
+                        .saturating_add(self.app_config_fields.time_interval);
+
+                    if new_time <= self.app_config_fields.retention_ms {
+                        gpu_widget_state.current_display_time = new_time;
+                        if self.app_config_fields.autohide_time {
+                            gpu_widget_state.autohide_timer = Some(Instant::now());
+                        }
+                    } else if gpu_widget_state.current_display_time
+                        != self.app_config_fields.retention_ms
+                    {
+                        gpu_widget_state.current_display_time = self.app_config_fields.retention_ms;
+                        if self.app_config_fields.autohide_time {
+                            gpu_widget_state.autohide_timer = Some(Instant::now());
+                        }
+                    }
+                }
+            }
             _ => {}
         }
     }
@@ -2195,6 +2229,31 @@ impl App {
                         net_widget_state.current_display_time = STALE_MIN_MILLISECONDS;
                         if self.app_config_fields.autohide_time {
                             net_widget_state.autohide_timer = Some(Instant::now());
+                        }
+                    }
+                }
+            }
+            #[cfg(feature = "gpu")]
+            BottomWidgetType::Gpu => {
+                if let Some(gpu_widget_state) = self
+                    .states
+                    .gpu_state
+                    .widget_states
+                    .get_mut(&self.current_widget.widget_id)
+                {
+                    let new_time = gpu_widget_state
+                        .current_display_time
+                        .saturating_sub(self.app_config_fields.time_interval);
+
+                    if new_time >= STALE_MIN_MILLISECONDS {
+                        gpu_widget_state.current_display_time = new_time;
+                        if self.app_config_fields.autohide_time {
+                            gpu_widget_state.autohide_timer = Some(Instant::now());
+                        }
+                    } else if gpu_widget_state.current_display_time != STALE_MIN_MILLISECONDS {
+                        gpu_widget_state.current_display_time = STALE_MIN_MILLISECONDS;
+                        if self.app_config_fields.autohide_time {
+                            gpu_widget_state.autohide_timer = Some(Instant::now());
                         }
                     }
                 }

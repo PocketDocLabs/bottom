@@ -14,6 +14,9 @@ use crate::{
     },
 };
 
+#[cfg(feature = "gpu")]
+use crate::widgets::GpuWidgetState;
+
 pub struct AppWidgetStates {
     pub cpu_state: CpuState,
     pub mem_state: MemState,
@@ -22,6 +25,8 @@ pub struct AppWidgetStates {
     pub temp_state: TempState,
     pub disk_state: DiskState,
     pub battery_state: AppBatteryState,
+    #[cfg(feature = "gpu")]
+    pub gpu_state: GpuState,
     pub basic_table_widget_state: Option<BasicTableWidgetState>,
 }
 
@@ -354,6 +359,26 @@ impl AppBatteryState {
 
     pub fn get_mut_widget_state(&mut self, widget_id: u64) -> Option<&mut BatteryWidgetState> {
         self.widget_states.get_mut(&widget_id)
+    }
+}
+
+#[cfg(feature = "gpu")]
+pub struct GpuState {
+    pub widget_states: HashMap<u64, GpuWidgetState>,
+}
+
+#[cfg(feature = "gpu")]
+impl GpuState {
+    pub fn init(widget_states: HashMap<u64, GpuWidgetState>) -> Self {
+        GpuState { widget_states }
+    }
+
+    pub fn get_mut_widget_state(&mut self, widget_id: u64) -> Option<&mut GpuWidgetState> {
+        self.widget_states.get_mut(&widget_id)
+    }
+
+    pub fn get_widget_state(&self, widget_id: u64) -> Option<&GpuWidgetState> {
+        self.widget_states.get(&widget_id)
     }
 }
 

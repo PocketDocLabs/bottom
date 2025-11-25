@@ -260,6 +260,20 @@ impl Painter {
                         #[cfg(feature = "battery")]
                         self.draw_battery(f, app_state, rect[0], app_state.current_widget.widget_id)
                     }
+                    #[cfg(feature = "gpu")]
+                    Gpu => self.draw_gpu(
+                        f,
+                        app_state,
+                        rect[0],
+                        app_state.current_widget.widget_id,
+                    ),
+                    #[cfg(feature = "gpu")]
+                    GpuLegend => self.draw_gpu(
+                        f,
+                        app_state,
+                        rect[0],
+                        app_state.current_widget.widget_id - 1,
+                    ),
                     _ => {}
                 }
             } else if app_state.app_config_fields.use_basic_mode {
@@ -446,6 +460,8 @@ impl Painter {
                         #[cfg(feature = "battery")]
                         self.draw_battery(f, app_state, *draw_loc, widget.widget_id)
                     }
+                    #[cfg(feature = "gpu")]
+                    Gpu => self.draw_gpu(f, app_state, *draw_loc, widget.widget_id),
                     _ => {}
                 }
             }

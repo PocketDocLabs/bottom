@@ -463,6 +463,13 @@ pub fn start_bottom(enable_error_hook: &mut bool) -> anyhow::Result<()> {
                             }
                         }
 
+                        #[cfg(feature = "gpu")]
+                        if app.used_widgets.use_gpu {
+                            for gpu in app.states.gpu_state.widget_states.values_mut() {
+                                gpu.force_data_update();
+                            }
+                        }
+
                         app.update_data();
                         try_drawing(&mut terminal, &mut app, &mut painter)?;
                     }

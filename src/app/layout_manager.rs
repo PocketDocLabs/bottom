@@ -947,17 +947,35 @@ pub enum BottomWidgetType {
     BasicNet,
     BasicTables,
     Battery,
+    #[cfg(feature = "gpu")]
+    Gpu,
+    #[cfg(feature = "gpu")]
+    GpuLegend,
 }
 
 impl BottomWidgetType {
     pub fn is_widget_table(&self) -> bool {
         use BottomWidgetType::*;
-        matches!(self, Disk | Proc | ProcSort | Temp | CpuLegend)
+        #[cfg(feature = "gpu")]
+        {
+            matches!(self, Disk | Proc | ProcSort | Temp | CpuLegend | GpuLegend)
+        }
+        #[cfg(not(feature = "gpu"))]
+        {
+            matches!(self, Disk | Proc | ProcSort | Temp | CpuLegend)
+        }
     }
 
     pub fn is_widget_graph(&self) -> bool {
         use BottomWidgetType::*;
-        matches!(self, Cpu | Net | Mem)
+        #[cfg(feature = "gpu")]
+        {
+            matches!(self, Cpu | Net | Mem | Gpu)
+        }
+        #[cfg(not(feature = "gpu"))]
+        {
+            matches!(self, Cpu | Net | Mem)
+        }
     }
 
     pub fn get_pretty_name(&self) -> &str {
@@ -970,6 +988,8 @@ impl BottomWidgetType {
             Temp => "Temperature",
             Disk => "Disks",
             Battery => "Battery",
+            #[cfg(feature = "gpu")]
+            Gpu => "GPU",
             _ => "",
         }
     }
@@ -990,8 +1010,38 @@ impl std::str::FromStr for BottomWidgetType {
             "empty" => Ok(BottomWidgetType::Empty),
             #[cfg(feature = "battery")]
             "battery" | "batt" => Ok(BottomWidgetType::Battery),
+            #[cfg(feature = "gpu")]
+            "gpu" => Ok(BottomWidgetType::Gpu),
             _ => {
-                #[cfg(feature = "battery")]
+                #[cfg(all(feature = "battery", feature = "gpu"))]
+                {
+                    Err(OptionError::config(format!(
+                        "'{s}' is an invalid widget name.
+        
+Supported widget names:
++--------------------------+
+|            cpu           |
++--------------------------+
+|        mem, memory       |
++--------------------------+
+|       net, network       |
++--------------------------+
+| proc, process, processes |
++--------------------------+
+|     temp, temperature    |
++--------------------------+
+|           disk           |
++--------------------------+
+|       batt, battery      |
++--------------------------+
+|           gpu            |
++--------------------------+
+|           empty          |
++--------------------------+
+                ",
+                    )))
+                }
+                #[cfg(all(feature = "battery", not(feature = "gpu")))]
                 {
                     Err(OptionError::config(format!(
                         "'{s}' is an invalid widget name.
@@ -1017,7 +1067,33 @@ Supported widget names:
                 ",
                     )))
                 }
-                #[cfg(not(feature = "battery"))]
+                #[cfg(all(not(feature = "battery"), feature = "gpu"))]
+                {
+                    Err(OptionError::config(format!(
+                        "'{s}' is an invalid widget name.
+
+Supported widget names:
++--------------------------+
+|            cpu           |
++--------------------------+
+|        mem, memory       |
++--------------------------+
+|       net, network       |
++--------------------------+
+| proc, process, processes |
++--------------------------+
+|     temp, temperature    |
++--------------------------+
+|           disk           |
++--------------------------+
+|           gpu            |
++--------------------------+
+|           empty          |
++--------------------------+
+                ",
+                    )))
+                }
+                #[cfg(all(not(feature = "battery"), not(feature = "gpu")))]
                 {
                     Err(OptionError::config(format!(
                         "'{s}' is an invalid widget name.
