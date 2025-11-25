@@ -102,7 +102,7 @@ pub struct Styles {
     pub(crate) swap_style: Style,
     #[cfg(feature = "zfs")]
     pub(crate) arc_style: Style,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     pub(crate) gpu_colours: Vec<Style>,
     pub(crate) rx_style: Style,
     pub(crate) tx_style: Style,
@@ -185,7 +185,7 @@ impl Styles {
         #[cfg(feature = "zfs")]
         set_colour!(self.arc_style, config.memory, arc_color);
 
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         set_colour_list!(self.gpu_colours, config.memory, gpu_colors);
 
         // Network

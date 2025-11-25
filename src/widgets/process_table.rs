@@ -164,11 +164,11 @@ fn make_column(column: ProcColumn) -> SortColumn<ProcColumn> {
         User => SortColumn::soft(User, Some(0.05)),
         State => SortColumn::hard(State, 9),
         Time => SortColumn::new(Time),
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         GpuMemValue => SortColumn::new(GpuMemValue).default_descending(),
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         GpuMemPercent => SortColumn::new(GpuMemPercent).default_descending(),
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         GpuUtilPercent => SortColumn::new(GpuUtilPercent).default_descending(),
     }
 }
@@ -197,9 +197,9 @@ pub enum ProcWidgetColumn {
     User,
     State,
     Time,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     GpuMem,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     GpuUtil,
 }
 
@@ -339,7 +339,7 @@ impl ProcWidgetState {
                             ProcWidgetColumn::User => User,
                             ProcWidgetColumn::State => State,
                             ProcWidgetColumn::Time => Time,
-                            #[cfg(feature = "gpu")]
+                            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                             ProcWidgetColumn::GpuMem => {
                                 if mem_as_values {
                                     GpuMemValue
@@ -347,7 +347,7 @@ impl ProcWidgetState {
                                     GpuMemPercent
                                 }
                             }
-                            #[cfg(feature = "gpu")]
+                            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                             ProcWidgetColumn::GpuUtil => GpuUtilPercent,
                         };
 
@@ -392,9 +392,9 @@ impl ProcWidgetState {
                     State => ProcWidgetColumn::State,
                     User => ProcWidgetColumn::User,
                     Time => ProcWidgetColumn::Time,
-                    #[cfg(feature = "gpu")]
+                    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     GpuMemValue | GpuMemPercent => ProcWidgetColumn::GpuMem,
-                    #[cfg(feature = "gpu")]
+                    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     GpuUtilPercent => ProcWidgetColumn::GpuUtil,
                 }
             })
@@ -818,7 +818,7 @@ impl ProcWidgetState {
                     pwd.total_read += process.total_read;
                     pwd.total_write += process.total_write;
                     pwd.time = pwd.time.max(process.time);
-                    #[cfg(feature = "gpu")]
+                    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     {
                         pwd.gpu_usage += process.gpu_util;
                         match &mut pwd.gpu_mem_usage {
@@ -878,7 +878,7 @@ impl ProcWidgetState {
                 self.force_data_update();
             }
         }
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         if let Some(index) = self.column_mapping.get_index_of(&ProcWidgetColumn::GpuMem) {
             if let Some(mem) = self.get_mut_proc_col(index) {
                 match mem {
@@ -1198,9 +1198,9 @@ mod test {
             num_similar: 0,
             disabled: false,
             time: Duration::from_secs(0),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_mem_usage: MemUsage::Percent(1.1),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_usage: 0,
             #[cfg(target_os = "linux")]
             process_type: crate::collection::processes::ProcessType::Regular,

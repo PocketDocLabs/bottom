@@ -131,17 +131,17 @@ pub struct ProcessHarvest {
     pub user: Option<Arc<str>>,
 
     /// Gpu memory usage as bytes.
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     pub gpu_mem: u64,
 
     /// Gpu memory usage as percentage.
     ///
     /// TODO: Maybe calculate this on usage? Store the total GPU mem along with the vector of results.
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     pub gpu_mem_percent: f32,
 
     /// Gpu utilization as a percentage.
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     pub gpu_util: u32,
 
     /// The process entry "type".

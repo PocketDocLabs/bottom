@@ -153,7 +153,7 @@ impl App {
             }
         }
 
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         for gpu in self.states.gpu_state.widget_states.values_mut() {
             if gpu.force_update_data {
                 gpu.set_legend_data(&data_source.gpu_data_harvest);
@@ -1168,7 +1168,7 @@ impl App {
                     disk.set_index(3);
                 }
             }
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             'M' => {
                 if let BottomWidgetType::Proc = self.current_widget.widget_type {
                     if let Some(proc_widget_state) = self
@@ -1180,7 +1180,7 @@ impl App {
                     }
                 }
             }
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             'C' => {
                 if let BottomWidgetType::Proc = self.current_widget.widget_type {
                     if let Some(proc_widget_state) = self
@@ -2128,7 +2128,7 @@ impl App {
                     }
                 }
             }
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             BottomWidgetType::Gpu => {
                 if let Some(gpu_widget_state) = self
                     .states
@@ -2233,7 +2233,7 @@ impl App {
                     }
                 }
             }
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             BottomWidgetType::Gpu => {
                 if let Some(gpu_widget_state) = self
                     .states

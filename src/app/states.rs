@@ -14,7 +14,7 @@ use crate::{
     },
 };
 
-#[cfg(feature = "gpu")]
+#[cfg(any(feature = "gpu", feature = "apple-gpu"))]
 use crate::widgets::GpuWidgetState;
 
 pub struct AppWidgetStates {
@@ -25,7 +25,7 @@ pub struct AppWidgetStates {
     pub temp_state: TempState,
     pub disk_state: DiskState,
     pub battery_state: AppBatteryState,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     pub gpu_state: GpuState,
     pub basic_table_widget_state: Option<BasicTableWidgetState>,
 }
@@ -362,12 +362,12 @@ impl AppBatteryState {
     }
 }
 
-#[cfg(feature = "gpu")]
+#[cfg(any(feature = "gpu", feature = "apple-gpu"))]
 pub struct GpuState {
     pub widget_states: HashMap<u64, GpuWidgetState>,
 }
 
-#[cfg(feature = "gpu")]
+#[cfg(any(feature = "gpu", feature = "apple-gpu"))]
 impl GpuState {
     pub fn init(widget_states: HashMap<u64, GpuWidgetState>) -> Self {
         GpuState { widget_states }

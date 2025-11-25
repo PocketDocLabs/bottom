@@ -131,7 +131,7 @@ impl Painter {
             }
         }
 
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         {
             let gpu_styles = &self.styles.gpu_colours;
             let mut colour_index = 0;

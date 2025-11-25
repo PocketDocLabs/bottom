@@ -6,7 +6,7 @@ use std::{
     vec::Vec,
 };
 
-#[cfg(feature = "gpu")]
+#[cfg(any(feature = "gpu", feature = "apple-gpu"))]
 use hashbrown::{HashMap, HashSet}; // TODO: Try fxhash again.
 use timeless::data::ChunkedData;
 
@@ -52,11 +52,11 @@ pub struct TimeSeriesData {
     /// Arc data.
     pub arc_mem: Values,
 
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     /// GPU memory data.
     pub gpu_mem: HashMap<String, Values>,
 
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     /// GPU metric data (power or utilization as percentage).
     pub gpu_data: HashMap<String, Values>,
 }
@@ -134,7 +134,7 @@ impl TimeSeriesData {
             }
         }
 
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         {
             if let Some(gpu) = &data.gpu {
                 let mut not_visited = self
@@ -251,7 +251,7 @@ impl TimeSeriesData {
         #[cfg(feature = "zfs")]
         let _ = self.arc_mem.prune_and_shrink_to_fit(end);
 
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         {
             self.gpu_mem.retain(|_, gpu| {
                 let _ = gpu.prune(end);

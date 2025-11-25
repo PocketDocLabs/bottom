@@ -278,11 +278,11 @@ fn read_proc(
             uid,
             user,
             time,
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_mem: 0,
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_mem_percent: 0.0,
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_util: 0,
             process_type,
         },
@@ -425,7 +425,7 @@ pub(crate) fn linux_process_data(
                 if let Ok((mut process_harvest, new_process_times)) =
                     read_proc(prev_proc_details, process, args, user_table, None)
                 {
-                    #[cfg(feature = "gpu")]
+                    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     if let Some(gpus) = &collector.gpu_pids {
                         gpus.iter().for_each(|gpu| {
                             // add mem/util for all gpus to pid

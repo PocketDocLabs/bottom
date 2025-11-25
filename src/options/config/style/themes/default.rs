@@ -27,7 +27,7 @@ impl Styles {
             swap_style: color!(SECOND_COLOUR),
             #[cfg(feature = "zfs")]
             arc_style: color!(THIRD_COLOUR),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_colours: vec![
                 color!(FOURTH_COLOUR),
                 color!(Color::LightBlue),
@@ -80,7 +80,7 @@ impl Styles {
             swap_style: color!(Color::Red),
             #[cfg(feature = "zfs")]
             arc_style: color!(Color::LightBlue),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_colours: vec![
                 color!(Color::LightGreen),
                 color!(Color::LightCyan),

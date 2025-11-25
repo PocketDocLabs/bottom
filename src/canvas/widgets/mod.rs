@@ -1,7 +1,7 @@
 pub mod cpu_basic;
 pub mod cpu_graph;
 pub mod disk_table;
-#[cfg(feature = "gpu")]
+#[cfg(any(feature = "gpu", feature = "apple-gpu"))]
 pub mod gpu_graph;
 pub mod mem_basic;
 pub mod mem_graph;

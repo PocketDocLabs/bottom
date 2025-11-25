@@ -99,11 +99,11 @@ pub(crate) trait UnixProcessExt {
                 } else {
                     Duration::from_secs(process_val.run_time())
                 },
-                #[cfg(feature = "gpu")]
+                #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                 gpu_mem: 0,
-                #[cfg(feature = "gpu")]
+                #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                 gpu_mem_percent: 0.0,
-                #[cfg(feature = "gpu")]
+                #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                 gpu_util: 0,
             });
         }

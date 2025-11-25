@@ -260,14 +260,14 @@ impl Painter {
                         #[cfg(feature = "battery")]
                         self.draw_battery(f, app_state, rect[0], app_state.current_widget.widget_id)
                     }
-                    #[cfg(feature = "gpu")]
+                    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     Gpu => self.draw_gpu(
                         f,
                         app_state,
                         rect[0],
                         app_state.current_widget.widget_id,
                     ),
-                    #[cfg(feature = "gpu")]
+                    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     GpuLegend => self.draw_gpu(
                         f,
                         app_state,
@@ -320,7 +320,7 @@ impl Painter {
                     }
                 }
 
-                #[cfg(feature = "gpu")]
+                #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                 {
                     mem_rows += data.gpu_harvest.len() as u16; // add row(s) for gpu
                 }
@@ -460,7 +460,7 @@ impl Painter {
                         #[cfg(feature = "battery")]
                         self.draw_battery(f, app_state, *draw_loc, widget.widget_id)
                     }
-                    #[cfg(feature = "gpu")]
+                    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     Gpu => self.draw_gpu(f, app_state, *draw_loc, widget.widget_id),
                     _ => {}
                 }

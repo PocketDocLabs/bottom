@@ -76,7 +76,7 @@ pub struct BottomArgs {
     #[command(flatten)]
     pub battery: BatteryArgs,
 
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     #[command(flatten)]
     pub gpu: GpuArgs,
 
@@ -609,7 +609,7 @@ pub struct BatteryArgs {
 }
 
 /// GPU arguments/config options.
-#[cfg(feature = "gpu")]
+#[cfg(any(feature = "gpu", feature = "apple-gpu"))]
 #[derive(Args, Clone, Debug, Default)]
 #[command(next_help_heading = "GPU Options", rename_all = "snake_case")]
 pub struct GpuArgs {

@@ -2,11 +2,18 @@
 //!
 //! TODO: Rename this to intake? Collection?
 
+// Common GPU types used by all GPU backends.
+#[cfg(any(feature = "gpu", feature = "apple-gpu"))]
+pub mod gpu;
+
 #[cfg(feature = "nvidia")]
 pub mod nvidia;
 
 #[cfg(all(target_os = "linux", feature = "gpu"))]
 pub mod amd;
+
+#[cfg(all(target_os = "macos", feature = "apple-gpu"))]
+pub mod apple;
 
 #[cfg(target_os = "linux")]
 mod linux {
@@ -25,7 +32,7 @@ pub mod temperature;
 
 use std::time::{Duration, Instant};
 
-#[cfg(any(target_os = "linux", feature = "gpu"))]
+#[cfg(any(target_os = "linux", feature = "gpu", feature = "apple-gpu"))]
 use hashbrown::HashMap;
 #[cfg(not(target_os = "windows"))]
 use processes::Pid;
@@ -54,10 +61,10 @@ pub struct Data {
     pub list_of_batteries: Option<Vec<batteries::BatteryData>>,
     #[cfg(feature = "zfs")]
     pub arc: Option<memory::MemData>,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     pub gpu: Option<Vec<(String, memory::MemData)>>,
-    #[cfg(feature = "gpu")]
-    pub gpu_data: Option<Vec<nvidia::GpuData>>,
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
+    pub gpu_data: Option<Vec<gpu::GpuData>>,
 }
 
 impl Default for Data {
@@ -79,9 +86,9 @@ impl Default for Data {
             list_of_batteries: None,
             #[cfg(feature = "zfs")]
             arc: None,
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu: None,
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_data: None,
         }
     }
@@ -105,7 +112,7 @@ impl Data {
         {
             self.arc = None;
         }
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         {
             self.gpu = None;
         }
@@ -184,9 +191,9 @@ pub struct DataCollector {
     #[cfg(target_family = "unix")]
     user_table: processes::UserTable,
 
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     gpu_pids: Option<Vec<HashMap<u32, (u64, u32)>>>,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     gpus_total_mem: Option<u64>,
     #[cfg(feature = "zfs")]
     free_arc_mem: bool,
@@ -224,9 +231,9 @@ impl DataCollector {
             filters,
             #[cfg(target_family = "unix")]
             user_table: Default::default(),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_pids: None,
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpus_total_mem: None,
             #[cfg(feature = "zfs")]
             free_arc_mem: false,
@@ -366,7 +373,7 @@ impl DataCollector {
         #[cfg(feature = "battery")]
         self.update_batteries();
 
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         self.update_gpus();
 
         self.update_processes();
@@ -382,14 +389,14 @@ impl DataCollector {
 
     /// Gets GPU data. Note this will usually append to other previously
     /// collected data fields at the moment.
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     #[inline]
     fn update_gpus(&mut self) {
         if self.widgets_to_harvest.use_gpu {
             let mut local_gpu: Vec<(String, memory::MemData)> = Vec::new();
             let mut local_gpu_pids: Vec<HashMap<u32, (u64, u32)>> = Vec::new();
             let mut local_gpu_total_mem: u64 = 0;
-            let mut local_gpu_data: Vec<nvidia::GpuData> = Vec::new();
+            let mut local_gpu_data: Vec<gpu::GpuData> = Vec::new();
 
             #[cfg(feature = "nvidia")]
             if let Some(data) =
@@ -414,7 +421,7 @@ impl DataCollector {
                 }
             }
 
-            #[cfg(target_os = "linux")]
+            #[cfg(all(target_os = "linux", feature = "gpu"))]
             if let Some(data) =
                 amd::get_amd_vecs(&self.widgets_to_harvest, self.last_collection_time)
             {
@@ -424,6 +431,14 @@ impl DataCollector {
                 if let Some(mut proc) = data.procs {
                     local_gpu_pids.append(&mut proc.1);
                     local_gpu_total_mem += proc.0;
+                }
+            }
+
+            // macOS GPU backend via IOKit.
+            #[cfg(all(target_os = "macos", feature = "apple-gpu"))]
+            if let Some(data) = apple::get_apple_gpu_vecs(&self.widgets_to_harvest) {
+                if let Some(mut gpu_data) = data.gpu_data {
+                    local_gpu_data.append(&mut gpu_data);
                 }
             }
 
@@ -652,7 +667,7 @@ mod tests {
         //     collector.widgets_to_harvest.use_cache = true;
         // }
 
-        // #[cfg(feature = "gpu")]
+        // #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         // {
         //     collector.widgets_to_harvest.use_gpu = true;
         // }

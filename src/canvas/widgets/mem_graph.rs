@@ -79,7 +79,7 @@ impl Painter {
                         size += 1; // add capacity for ARC
                     }
                 }
-                #[cfg(feature = "gpu")]
+                #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                 {
                     size += data.gpu_harvest.len(); // add row(s) for gpu
                 }
@@ -131,7 +131,7 @@ impl Painter {
                     );
                 }
 
-                #[cfg(feature = "gpu")]
+                #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                 {
                     let mut colour_index = 0;
                     let gpu_styles = &self.styles.gpu_colours;

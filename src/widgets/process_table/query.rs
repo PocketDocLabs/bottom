@@ -471,7 +471,7 @@ pub(crate) fn parse_query(
                                         | PrefixType::TWrite => {
                                             process_prefix_units(query, &mut value);
                                         }
-                                        #[cfg(feature = "gpu")]
+                                        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                                         PrefixType::GMem => {
                                             process_prefix_units(query, &mut value);
                                         }
@@ -670,11 +670,11 @@ enum PrefixType {
     State,
     User,
     Time,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     PGpu,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     GMem,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     PGMem,
     __Nonexhaustive,
 }
@@ -712,7 +712,7 @@ impl std::str::FromStr for PrefixType {
         } else if multi_eq_ignore_ascii_case!(s, "time") {
             result = Time;
         }
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         {
             if multi_eq_ignore_ascii_case!(s, "gmem") {
                 result = GMem;
@@ -862,19 +862,19 @@ impl Prefix {
                         process.total_write as f64,
                         numerical_query.value,
                     ),
-                    #[cfg(feature = "gpu")]
+                    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     PrefixType::PGpu => matches_condition(
                         &numerical_query.condition,
                         process.gpu_util,
                         numerical_query.value,
                     ),
-                    #[cfg(feature = "gpu")]
+                    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     PrefixType::GMem => matches_condition(
                         &numerical_query.condition,
                         process.gpu_mem as f64,
                         numerical_query.value,
                     ),
-                    #[cfg(feature = "gpu")]
+                    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     PrefixType::PGMem => matches_condition(
                         &numerical_query.condition,
                         process.gpu_mem_percent,

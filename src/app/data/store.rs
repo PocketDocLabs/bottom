@@ -27,10 +27,10 @@ pub struct StoredData {
     pub cache_harvest: Option<MemData>,
     #[cfg(feature = "zfs")]
     pub arc_harvest: Option<MemData>,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     pub gpu_harvest: Vec<(String, MemData)>,
-    #[cfg(feature = "gpu")]
-    pub gpu_data_harvest: Vec<crate::collection::nvidia::GpuData>,
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
+    pub gpu_data_harvest: Vec<crate::collection::gpu::GpuData>,
     pub cpu_harvest: cpu::CpuHarvest,
     pub load_avg_harvest: cpu::LoadAvgHarvest,
     pub process_data: ProcessData,
@@ -62,9 +62,9 @@ impl Default for StoredData {
             battery_harvest: Vec::default(),
             #[cfg(feature = "zfs")]
             arc_harvest: None,
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_harvest: Vec::default(),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_data_harvest: Vec::default(),
         }
     }
@@ -111,12 +111,12 @@ impl StoredData {
             self.arc_harvest = data.arc;
         }
 
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         if let Some(gpu) = data.gpu {
             self.gpu_harvest = gpu;
         }
 
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         if let Some(gpu_data) = data.gpu_data {
             self.gpu_data_harvest = gpu_data;
         }

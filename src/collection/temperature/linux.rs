@@ -9,7 +9,7 @@ use anyhow::Result;
 use hashbrown::{HashMap, HashSet};
 
 use super::TempSensorData;
-#[cfg(feature = "gpu")]
+#[cfg(any(feature = "gpu", feature = "apple-gpu"))]
 use crate::collection::amd::get_amd_name;
 use crate::{app::filter::Filter, collection::linux::utils::is_device_awake};
 
@@ -263,7 +263,7 @@ fn hwmon_temperatures(filter: &Option<Filter>) -> HwmonResults {
                         // This should never actually be empty. If it is though, we'll fall back to
                         // the sensor name later on.
 
-                        #[cfg(feature = "gpu")]
+                        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                         {
                             if let Some(amd_gpu_name) = get_amd_name(&device) {
                                 Some(amd_gpu_name)
@@ -283,7 +283,7 @@ fn hwmon_temperatures(filter: &Option<Filter>) -> HwmonResults {
                             }
                         }
 
-                        #[cfg(not(feature = "gpu"))]
+                        #[cfg(not(any(feature = "gpu", feature = "apple-gpu")))]
                         {
                             if let Ok(cards) = drm.read_dir() {
                                 cards.flatten().find_map(|card| {

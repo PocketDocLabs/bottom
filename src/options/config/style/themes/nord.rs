@@ -15,7 +15,7 @@ impl Styles {
             swap_style: hex!("#d08770"),
             #[cfg(feature = "zfs")]
             arc_style: hex!("#5e81ac"),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_colours: vec![
                 hex!("#8fbcbb"),
                 hex!("#81a1c1"),
@@ -68,7 +68,7 @@ impl Styles {
             swap_style: hex!("#d08770"),
             #[cfg(feature = "zfs")]
             arc_style: hex!("#5e81ac"),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_colours: vec![
                 hex!("#8fbcbb"),
                 hex!("#88c0d0"),

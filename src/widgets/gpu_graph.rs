@@ -28,7 +28,7 @@ use crate::{
             DataToCell,
         },
     },
-    collection::nvidia::{GpuData, GpuMetric},
+    collection::gpu::{GpuData, GpuMetric},
     options::config::style::Styles,
 };
 

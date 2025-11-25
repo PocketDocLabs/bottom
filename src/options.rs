@@ -260,7 +260,7 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
     let mut temp_state_map: HashMap<u64, TempWidgetState> = HashMap::new();
     let mut disk_state_map: HashMap<u64, DiskTableWidget> = HashMap::new();
     let mut battery_state_map: HashMap<u64, BatteryWidgetState> = HashMap::new();
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     let mut gpu_state_map: HashMap<u64, GpuWidgetState> = HashMap::new();
 
     let autohide_timer = if autohide_time {
@@ -450,7 +450,7 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
                             battery_state_map
                                 .insert(widget.widget_id, BatteryWidgetState::default());
                         }
-                        #[cfg(feature = "gpu")]
+                        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                         Gpu => {
                             gpu_state_map.insert(
                                 widget.widget_id,
@@ -493,9 +493,9 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
     };
 
     let use_mem = used_widget_set.get(&Mem).is_some() || used_widget_set.get(&BasicMem).is_some();
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     let use_gpu = get_enable_gpu(args, config) || used_widget_set.get(&Gpu).is_some();
-    #[cfg(not(feature = "gpu"))]
+    #[cfg(not(any(feature = "gpu", feature = "apple-gpu")))]
     let use_gpu = false;
     let used_widgets = UsedWidgets {
         use_cpu: used_widget_set.get(&Cpu).is_some() || used_widget_set.get(&BasicCpu).is_some(),
@@ -541,7 +541,7 @@ pub(crate) fn init_app(args: BottomArgs, config: Config) -> Result<(App, BottomL
         temp_state: TempState::init(temp_state_map),
         disk_state: DiskState::init(disk_state_map),
         battery_state: AppBatteryState::init(battery_state_map),
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         gpu_state: GpuState::init(gpu_state_map),
         basic_table_widget_state,
     };
@@ -899,7 +899,7 @@ fn get_use_battery(_args: &BottomArgs, _config: &Config) -> bool {
     false
 }
 
-#[cfg(feature = "gpu")]
+#[cfg(any(feature = "gpu", feature = "apple-gpu"))]
 fn get_enable_gpu(args: &BottomArgs, config: &Config) -> bool {
     if args.gpu.disable_gpu {
         return false;
@@ -912,7 +912,7 @@ fn get_enable_gpu(args: &BottomArgs, config: &Config) -> bool {
         .unwrap_or(false)
 }
 
-#[cfg(not(feature = "gpu"))]
+#[cfg(not(any(feature = "gpu", feature = "apple-gpu")))]
 fn get_enable_gpu(_: &BottomArgs, _: &Config) -> bool {
     false
 }

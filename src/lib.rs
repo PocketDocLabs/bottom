@@ -463,7 +463,7 @@ pub fn start_bottom(enable_error_hook: &mut bool) -> anyhow::Result<()> {
                             }
                         }
 
-                        #[cfg(feature = "gpu")]
+                        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                         if app.used_widgets.use_gpu {
                             for gpu in app.states.gpu_state.widget_states.values_mut() {
                                 gpu.force_data_update();

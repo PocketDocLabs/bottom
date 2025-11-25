@@ -64,6 +64,8 @@ required-features = ["generate_schema"]
 # Used for general builds.
 battery = ["starship-battery"]
 nvidia = ["nvml-wrapper"]
+apple-gpu = []
+# gpu enables the GPU widget; backends (nvidia, apple-gpu) provide the data.
 gpu = ["nvidia"]
 zfs = []
 deploy = ["battery", "gpu", "zfs"]
@@ -117,6 +119,7 @@ rustix = { version = "1.1.2", features = ["fs", "param"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.10.1"
+core-foundation-sys = "0.8.7"
 mach2 = "0.5.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]

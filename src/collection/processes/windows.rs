@@ -69,7 +69,7 @@ pub fn sysinfo_process_data(
         let disk_usage = process_val.disk_usage();
         let process_state = (process_status_str(process_val.status()), 'R');
 
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         let (gpu_mem, gpu_util, gpu_mem_percent) = {
             let mut gpu_mem = 0;
             let mut gpu_util = 0;
@@ -119,11 +119,11 @@ pub fn sysinfo_process_data(
             } else {
                 Duration::from_secs(process_val.run_time())
             },
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_mem,
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_util,
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_mem_percent,
         });
     }

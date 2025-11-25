@@ -211,9 +211,9 @@ pub struct ProcWidgetData {
     pub num_similar: u64,
     pub disabled: bool,
     pub time: Duration,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     pub gpu_mem_usage: MemUsage,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     pub gpu_usage: u32,
     /// The process "type". Used to color things.
     #[cfg(target_os = "linux")]
@@ -254,13 +254,13 @@ impl ProcWidgetData {
             num_similar: 1,
             disabled: false,
             time: process.time,
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_mem_usage: if is_mem_percent {
                 MemUsage::Percent(process.gpu_mem_percent)
             } else {
                 MemUsage::Bytes(process.gpu_mem)
             },
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_usage: process.gpu_util,
             #[cfg(target_os = "linux")]
             process_type: process.process_type,
@@ -292,7 +292,7 @@ impl ProcWidgetData {
         self.total_read += other.total_read;
         self.total_write += other.total_write;
         self.time = self.time.max(other.time);
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         {
             self.gpu_mem_usage = match (&self.gpu_mem_usage, &other.gpu_mem_usage) {
                 (MemUsage::Percent(a), MemUsage::Percent(b)) => MemUsage::Percent(a + b),
@@ -325,9 +325,9 @@ impl ProcWidgetData {
                 .map(|user| user.to_string())
                 .unwrap_or_else(|| "N/A".to_string()),
             ProcColumn::Time => format_time(self.time),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             ProcColumn::GpuMemValue | ProcColumn::GpuMemPercent => self.gpu_mem_usage.to_string(),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             ProcColumn::GpuUtilPercent => format!("{:.1}%", self.gpu_usage),
         }
     }
@@ -366,11 +366,11 @@ impl DataToCell<ProcColumn> for ProcWidgetData {
                 .map(|user| user.to_string().into())
                 .unwrap_or_else(|| "N/A".into()),
             ProcColumn::Time => format_time(self.time).into(),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             ProcColumn::GpuMemValue | ProcColumn::GpuMemPercent => {
                 self.gpu_mem_usage.to_string().into()
             }
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             ProcColumn::GpuUtilPercent => format!("{:.1}%", self.gpu_usage).into(),
         })
     }

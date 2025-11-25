@@ -947,20 +947,20 @@ pub enum BottomWidgetType {
     BasicNet,
     BasicTables,
     Battery,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     Gpu,
-    #[cfg(feature = "gpu")]
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     GpuLegend,
 }
 
 impl BottomWidgetType {
     pub fn is_widget_table(&self) -> bool {
         use BottomWidgetType::*;
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         {
             matches!(self, Disk | Proc | ProcSort | Temp | CpuLegend | GpuLegend)
         }
-        #[cfg(not(feature = "gpu"))]
+        #[cfg(not(any(feature = "gpu", feature = "apple-gpu")))]
         {
             matches!(self, Disk | Proc | ProcSort | Temp | CpuLegend)
         }
@@ -968,11 +968,11 @@ impl BottomWidgetType {
 
     pub fn is_widget_graph(&self) -> bool {
         use BottomWidgetType::*;
-        #[cfg(feature = "gpu")]
+        #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         {
             matches!(self, Cpu | Net | Mem | Gpu)
         }
-        #[cfg(not(feature = "gpu"))]
+        #[cfg(not(any(feature = "gpu", feature = "apple-gpu")))]
         {
             matches!(self, Cpu | Net | Mem)
         }
@@ -988,7 +988,7 @@ impl BottomWidgetType {
             Temp => "Temperature",
             Disk => "Disks",
             Battery => "Battery",
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             Gpu => "GPU",
             _ => "",
         }
@@ -1010,10 +1010,10 @@ impl std::str::FromStr for BottomWidgetType {
             "empty" => Ok(BottomWidgetType::Empty),
             #[cfg(feature = "battery")]
             "battery" | "batt" => Ok(BottomWidgetType::Battery),
-            #[cfg(feature = "gpu")]
+            #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             "gpu" => Ok(BottomWidgetType::Gpu),
             _ => {
-                #[cfg(all(feature = "battery", feature = "gpu"))]
+                #[cfg(all(feature = "battery", any(feature = "gpu", feature = "apple-gpu")))]
                 {
                     Err(OptionError::config(format!(
                         "'{s}' is an invalid widget name.
@@ -1041,7 +1041,7 @@ Supported widget names:
                 ",
                     )))
                 }
-                #[cfg(all(feature = "battery", not(feature = "gpu")))]
+                #[cfg(all(feature = "battery", not(any(feature = "gpu", feature = "apple-gpu"))))]
                 {
                     Err(OptionError::config(format!(
                         "'{s}' is an invalid widget name.
@@ -1067,7 +1067,7 @@ Supported widget names:
                 ",
                     )))
                 }
-                #[cfg(all(not(feature = "battery"), feature = "gpu"))]
+                #[cfg(all(not(feature = "battery"), any(feature = "gpu", feature = "apple-gpu")))]
                 {
                     Err(OptionError::config(format!(
                         "'{s}' is an invalid widget name.
@@ -1093,7 +1093,7 @@ Supported widget names:
                 ",
                     )))
                 }
-                #[cfg(all(not(feature = "battery"), not(feature = "gpu")))]
+                #[cfg(all(not(feature = "battery"), not(any(feature = "gpu", feature = "apple-gpu"))))]
                 {
                     Err(OptionError::config(format!(
                         "'{s}' is an invalid widget name.
