@@ -394,6 +394,7 @@ jobs:
 
   build-cirrus:
     name: "Build using Cirrus CI"
+    if: github.repository == 'ClementTsang/bottom'
     runs-on: "ubuntu-latest"
     timeout-minutes: 12
     steps:
