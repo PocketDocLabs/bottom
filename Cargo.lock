@@ -192,6 +192,7 @@ dependencies = [
  "clap_mangen",
  "concat-string",
  "core-foundation",
+ "core-foundation-sys",
  "crossterm",
  "ctrlc",
  "dirs",
