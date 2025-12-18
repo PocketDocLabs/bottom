@@ -52,18 +52,15 @@ unsafe extern "C" {
 
     fn IOServiceMatching(name: *const libc::c_char) -> CFMutableDictionaryRef;
     fn IOServiceGetMatchingServices(
-        mainPort: u32,
-        matching: CFMutableDictionaryRef,
-        existing: *mut io_iterator_t,
+        mainPort: u32, matching: CFMutableDictionaryRef, existing: *mut io_iterator_t,
     ) -> kern_return_t;
     fn IOIteratorNext(iterator: io_iterator_t) -> io_object_t;
     fn IORegistryEntryCreateCFProperties(
-        entry: io_registry_entry_t,
-        properties: *mut CFMutableDictionaryRef,
-        allocator: CFAllocatorRef,
-        options: u32,
+        entry: io_registry_entry_t, properties: *mut CFMutableDictionaryRef,
+        allocator: CFAllocatorRef, options: u32,
     ) -> kern_return_t;
-    fn IORegistryEntryGetName(entry: io_registry_entry_t, name: *mut libc::c_char) -> kern_return_t;
+    fn IORegistryEntryGetName(entry: io_registry_entry_t, name: *mut libc::c_char)
+    -> kern_return_t;
     fn IOObjectRelease(object: io_object_t) -> kern_return_t;
 }
 

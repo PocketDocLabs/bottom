@@ -324,7 +324,7 @@ mod test {
         // Test CPU legend
         assert_eq!(
             ret_bottom_layout.rows[0].children[0].children[0].children[1].down_neighbour,
-            Some(4)
+            Some(3)
         );
         assert_eq!(
             ret_bottom_layout.rows[0].children[0].children[0].children[1].right_neighbour,
@@ -340,31 +340,33 @@ mod test {
         );
 
         // Test memory->temp, temp->disk, disk->memory mappings
+        // Row 2 is now Mem/Temp/Disk (was row 1 before GPU row was added)
         assert_eq!(
-            ret_bottom_layout.rows[1].children[0].children[0].children[0].right_neighbour,
-            Some(4)
-        );
-        assert_eq!(
-            ret_bottom_layout.rows[1].children[1].children[0].children[0].down_neighbour,
+            ret_bottom_layout.rows[2].children[0].children[0].children[0].right_neighbour,
             Some(5)
         );
         assert_eq!(
-            ret_bottom_layout.rows[1].children[1].children[1].children[0].left_neighbour,
-            Some(3)
+            ret_bottom_layout.rows[2].children[1].children[0].children[0].down_neighbour,
+            Some(6)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[2].children[1].children[1].children[0].left_neighbour,
+            Some(4)
         );
 
         // Test disk -> processes, processes -> process sort, process sort -> network
+        // Row 3 is now Net/Proc (was row 2 before GPU row was added)
         assert_eq!(
-            ret_bottom_layout.rows[1].children[1].children[1].children[0].down_neighbour,
+            ret_bottom_layout.rows[2].children[1].children[1].children[0].down_neighbour,
+            Some(8)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[3].children[1].children[0].children[1].left_neighbour,
+            Some(10)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[3].children[1].children[0].children[0].left_neighbour,
             Some(7)
-        );
-        assert_eq!(
-            ret_bottom_layout.rows[2].children[1].children[0].children[1].left_neighbour,
-            Some(9)
-        );
-        assert_eq!(
-            ret_bottom_layout.rows[2].children[1].children[0].children[0].left_neighbour,
-            Some(6)
         );
     }
 
@@ -381,6 +383,7 @@ mod test {
         let ret_bottom_layout = test_create_layout(&rows, DEFAULT_WIDGET_ID, None, 1, false);
 
         // Simple tests for the top CPU widget
+        // CPU's down_neighbour is GPU (widget 4), not battery (widget 3)
         assert_eq!(
             ret_bottom_layout.rows[0].children[0].children[0].children[0].down_neighbour,
             Some(4)
@@ -399,9 +402,10 @@ mod test {
         );
 
         // Test CPU legend
+        // CPU legend's down_neighbour is GPU (widget 4)
         assert_eq!(
             ret_bottom_layout.rows[0].children[0].children[0].children[1].down_neighbour,
-            Some(5)
+            Some(4)
         );
         assert_eq!(
             ret_bottom_layout.rows[0].children[0].children[0].children[1].right_neighbour,

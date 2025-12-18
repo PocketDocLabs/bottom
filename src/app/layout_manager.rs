@@ -1093,7 +1093,10 @@ Supported widget names:
                 ",
                     )))
                 }
-                #[cfg(all(not(feature = "battery"), not(any(feature = "gpu", feature = "apple-gpu"))))]
+                #[cfg(all(
+                    not(feature = "battery"),
+                    not(any(feature = "gpu", feature = "apple-gpu"))
+                ))]
                 {
                     Err(OptionError::config(format!(
                         "'{s}' is an invalid widget name.

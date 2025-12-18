@@ -42,11 +42,8 @@ impl Painter {
                 }
             }
             self.draw_gpu_graph(f, app_state, draw_loc, widget_id);
-            if let Some(gpu_widget_state) = app_state
-                .states
-                .gpu_state
-                .widget_states
-                .get_mut(&widget_id)
+            if let Some(gpu_widget_state) =
+                app_state.states.gpu_state.widget_states.get_mut(&widget_id)
             {
                 gpu_widget_state.is_legend_hidden = true;
             }
@@ -104,8 +101,10 @@ impl Painter {
                         partitioned_draw_loc[graph_index].y,
                     ));
                     gpu_widget.bottom_right_corner = Some((
-                        partitioned_draw_loc[graph_index].x + partitioned_draw_loc[graph_index].width,
-                        partitioned_draw_loc[graph_index].y + partitioned_draw_loc[graph_index].height,
+                        partitioned_draw_loc[graph_index].x
+                            + partitioned_draw_loc[graph_index].width,
+                        partitioned_draw_loc[graph_index].y
+                            + partitioned_draw_loc[graph_index].height,
                     ));
                 }
 
@@ -115,8 +114,10 @@ impl Painter {
                         partitioned_draw_loc[legend_index].y,
                     ));
                     legend_widget.bottom_right_corner = Some((
-                        partitioned_draw_loc[legend_index].x + partitioned_draw_loc[legend_index].width,
-                        partitioned_draw_loc[legend_index].y + partitioned_draw_loc[legend_index].height,
+                        partitioned_draw_loc[legend_index].x
+                            + partitioned_draw_loc[legend_index].width,
+                        partitioned_draw_loc[legend_index].y
+                            + partitioned_draw_loc[legend_index].height,
                     ));
                 }
             }
@@ -140,10 +141,7 @@ impl Painter {
                     let style =
                         self.styles.cpu_colour_styles[itx % self.styles.cpu_colour_styles.len()];
 
-                    GraphData::default()
-                        .style(style)
-                        .time(time)
-                        .values(values)
+                    GraphData::default().style(style).time(time).values(values)
                 })
                 .collect();
             points.reverse();
@@ -163,12 +161,10 @@ impl Painter {
         }
     }
 
-    fn draw_gpu_graph(&self, f: &mut Frame<'_>, app_state: &mut App, draw_loc: Rect, widget_id: u64) {
-        if let Some(gpu_widget_state) = app_state
-            .states
-            .gpu_state
-            .widget_states
-            .get_mut(&widget_id)
+    fn draw_gpu_graph(
+        &self, f: &mut Frame<'_>, app_state: &mut App, draw_loc: Rect, widget_id: u64,
+    ) {
+        if let Some(gpu_widget_state) = app_state.states.gpu_state.widget_states.get_mut(&widget_id)
         {
             let data = app_state.data_store.get_data();
 

@@ -21,10 +21,7 @@
 #[derive(Clone, Debug)]
 pub enum GpuMetric {
     /// Power draw in milliwatts with optional power limit.
-    Power {
-        draw_mw: u32,
-        limit_mw: Option<u32>,
-    },
+    Power { draw_mw: u32, limit_mw: Option<u32> },
     /// Utilization as a percentage (0-100).
     Utilization(f32),
 }

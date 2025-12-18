@@ -261,12 +261,7 @@ impl Painter {
                         self.draw_battery(f, app_state, rect[0], app_state.current_widget.widget_id)
                     }
                     #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
-                    Gpu => self.draw_gpu(
-                        f,
-                        app_state,
-                        rect[0],
-                        app_state.current_widget.widget_id,
-                    ),
+                    Gpu => self.draw_gpu(f, app_state, rect[0], app_state.current_widget.widget_id),
                     #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     GpuLegend => self.draw_gpu(
                         f,
