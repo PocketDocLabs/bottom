@@ -35,7 +35,7 @@ jobs:
 
   coverage:
     needs: pre-job
-    if: ${{ needs.pre-job.outputs.should_skip != 'true' }}
+    if: ${{ needs.pre-job.outputs.should_skip != 'true' && github.repository == 'ClementTsang/bottom' }}
     runs-on: ${{ matrix.info.os }}
     timeout-minutes: 12
     strategy:
