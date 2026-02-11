@@ -297,8 +297,9 @@ mod test {
         ret_bottom_layout
     }
 
+    #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     #[test]
-    /// Tests the default setup.
+    /// Tests the default setup (with GPU row in layout).
     fn test_default_movement() {
         let rows = from_str::<Config>(DEFAULT_LAYOUT).unwrap().row.unwrap();
         let ret_bottom_layout = test_create_layout(&rows, DEFAULT_WIDGET_ID, None, 1, false);
@@ -340,7 +341,7 @@ mod test {
         );
 
         // Test memory->temp, temp->disk, disk->memory mappings
-        // Row 2 is now Mem/Temp/Disk (was row 1 before GPU row was added)
+        // Row 2 is Mem/Temp/Disk (row 1 is GPU)
         assert_eq!(
             ret_bottom_layout.rows[2].children[0].children[0].children[0].right_neighbour,
             Some(5)
@@ -355,7 +356,7 @@ mod test {
         );
 
         // Test disk -> processes, processes -> process sort, process sort -> network
-        // Row 3 is now Net/Proc (was row 2 before GPU row was added)
+        // Row 3 is Net/Proc (row 1 is GPU)
         assert_eq!(
             ret_bottom_layout.rows[2].children[1].children[1].children[0].down_neighbour,
             Some(8)
@@ -370,9 +371,81 @@ mod test {
         );
     }
 
-    #[cfg(feature = "battery")]
+    #[cfg(not(any(feature = "gpu", feature = "apple-gpu")))]
     #[test]
-    /// Tests battery movement in the default setup.
+    /// Tests the default setup (without GPU row in layout).
+    fn test_default_movement() {
+        let rows = from_str::<Config>(DEFAULT_LAYOUT).unwrap().row.unwrap();
+        let ret_bottom_layout = test_create_layout(&rows, DEFAULT_WIDGET_ID, None, 1, false);
+
+        // Simple tests for the top CPU widget
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[0].down_neighbour,
+            Some(3)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[0].right_neighbour,
+            Some(2)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[0].left_neighbour,
+            None
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[0].up_neighbour,
+            None
+        );
+
+        // Test CPU legend
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[1].down_neighbour,
+            Some(4)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[1].right_neighbour,
+            None
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[1].left_neighbour,
+            Some(1)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[1].up_neighbour,
+            None
+        );
+
+        // Test memory->temp, temp->disk, disk->memory mappings
+        assert_eq!(
+            ret_bottom_layout.rows[1].children[0].children[0].children[0].right_neighbour,
+            Some(4)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[1].children[1].children[0].children[0].down_neighbour,
+            Some(5)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[1].children[1].children[1].children[0].left_neighbour,
+            Some(3)
+        );
+
+        // Test disk -> processes, processes -> process sort, process sort -> network
+        assert_eq!(
+            ret_bottom_layout.rows[1].children[1].children[1].children[0].down_neighbour,
+            Some(7)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[2].children[1].children[0].children[1].left_neighbour,
+            Some(9)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[2].children[1].children[0].children[0].left_neighbour,
+            Some(6)
+        );
+    }
+
+    #[cfg(all(feature = "battery", any(feature = "gpu", feature = "apple-gpu")))]
+    #[test]
+    /// Tests battery movement in the default setup (with GPU row).
     fn test_default_battery_movement() {
         use crate::constants::DEFAULT_BATTERY_LAYOUT;
 
@@ -382,7 +455,6 @@ mod test {
             .unwrap();
         let ret_bottom_layout = test_create_layout(&rows, DEFAULT_WIDGET_ID, None, 1, false);
 
-        // Simple tests for the top CPU widget
         // CPU's down_neighbour is GPU (widget 4), not battery (widget 3)
         assert_eq!(
             ret_bottom_layout.rows[0].children[0].children[0].children[0].down_neighbour,
@@ -401,11 +473,57 @@ mod test {
             None
         );
 
-        // Test CPU legend
         // CPU legend's down_neighbour is GPU (widget 4)
         assert_eq!(
             ret_bottom_layout.rows[0].children[0].children[0].children[1].down_neighbour,
             Some(4)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[1].right_neighbour,
+            Some(3)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[1].left_neighbour,
+            Some(1)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[1].up_neighbour,
+            None
+        );
+    }
+
+    #[cfg(all(feature = "battery", not(any(feature = "gpu", feature = "apple-gpu"))))]
+    #[test]
+    /// Tests battery movement in the default setup (without GPU row).
+    fn test_default_battery_movement() {
+        use crate::constants::DEFAULT_BATTERY_LAYOUT;
+
+        let rows = from_str::<Config>(DEFAULT_BATTERY_LAYOUT)
+            .unwrap()
+            .row
+            .unwrap();
+        let ret_bottom_layout = test_create_layout(&rows, DEFAULT_WIDGET_ID, None, 1, false);
+
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[0].down_neighbour,
+            Some(4)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[0].right_neighbour,
+            Some(2)
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[0].left_neighbour,
+            None
+        );
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[0].up_neighbour,
+            None
+        );
+
+        assert_eq!(
+            ret_bottom_layout.rows[0].children[0].children[0].children[1].down_neighbour,
+            Some(5)
         );
         assert_eq!(
             ret_bottom_layout.rows[0].children[0].children[0].children[1].right_neighbour,

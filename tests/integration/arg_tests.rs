@@ -164,7 +164,7 @@ fn test_battery_flag() {
 }
 
 #[test]
-#[cfg_attr(feature = "gpu", ignore)]
+#[cfg_attr(any(feature = "gpu", feature = "apple-gpu"), ignore)]
 fn test_gpu_flag() {
     no_cfg_btm_command()
         .arg("--disable_gpu")

@@ -189,6 +189,7 @@ pub(crate) const HELP_TEXT: [&[&str]; HELP_CONTENTS_TEXT.len()] = [
     &BASIC_MEM_HELP_TEXT,
 ];
 
+#[cfg(any(feature = "gpu", feature = "apple-gpu"))]
 pub(crate) const DEFAULT_LAYOUT: &str = r#"
 [[row]]
   ratio=20
@@ -219,6 +220,34 @@ pub(crate) const DEFAULT_LAYOUT: &str = r#"
     default=true
 "#;
 
+#[cfg(not(any(feature = "gpu", feature = "apple-gpu")))]
+pub(crate) const DEFAULT_LAYOUT: &str = r#"
+[[row]]
+  ratio=20
+  [[row.child]]
+    ratio=2
+    type="cpu"
+[[row]]
+    ratio=30
+    [[row.child]]
+      ratio=4
+      type="mem"
+    [[row.child]]
+      ratio=3
+      [[row.child.child]]
+        type="temp"
+      [[row.child.child]]
+        type="disk"
+[[row]]
+  ratio=30
+  [[row.child]]
+    type="net"
+  [[row.child]]
+    type="proc"
+    default=true
+"#;
+
+#[cfg(any(feature = "gpu", feature = "apple-gpu"))]
 pub(crate) const DEFAULT_BATTERY_LAYOUT: &str = r#"
 [[row]]
   ratio=20
@@ -232,6 +261,36 @@ pub(crate) const DEFAULT_BATTERY_LAYOUT: &str = r#"
     ratio=30
     [[row.child]]
       type="gpu"
+[[row]]
+    ratio=30
+    [[row.child]]
+      ratio=4
+      type="mem"
+    [[row.child]]
+      ratio=3
+      [[row.child.child]]
+        type="temp"
+      [[row.child.child]]
+        type="disk"
+[[row]]
+  ratio=30
+  [[row.child]]
+    type="net"
+  [[row.child]]
+    type="proc"
+    default=true
+"#;
+
+#[cfg(not(any(feature = "gpu", feature = "apple-gpu")))]
+pub(crate) const DEFAULT_BATTERY_LAYOUT: &str = r#"
+[[row]]
+  ratio=20
+  [[row.child]]
+    ratio=2
+    type="cpu"
+  [[row.child]]
+    ratio=1
+    type="battery"
 [[row]]
     ratio=30
     [[row.child]]
