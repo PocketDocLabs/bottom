@@ -33,8 +33,8 @@ pub mod temperature;
 use std::time::{Duration, Instant};
 
 #[cfg(any(target_os = "linux", feature = "gpu", feature = "apple-gpu"))]
-use hashbrown::HashMap;
-#[cfg(not(target_os = "windows"))]
+use nohash::IntMap;
+#[cfg(any(not(target_os = "windows"), feature = "gpu", feature = "apple-gpu"))]
 use processes::Pid;
 #[cfg(feature = "battery")]
 use starship_battery::{Battery, Manager};
@@ -42,7 +42,7 @@ use starship_battery::{Battery, Manager};
 use super::DataFilters;
 use crate::app::layout_manager::UsedWidgets;
 
-// TODO: We can possibly re-use an internal buffer for this to reduce allocs.
+// TODO: We can possibly reuse an internal buffer for this to reduce allocs.
 #[derive(Clone, Debug)]
 pub struct Data {
     pub collection_time: Instant,
@@ -177,7 +177,7 @@ pub struct DataCollector {
     should_run_less_routine_tasks: bool,
 
     #[cfg(target_os = "linux")]
-    prev_process_details: HashMap<Pid, processes::PrevProcDetails>,
+    prev_process_details: IntMap<Pid, processes::PrevProcDetails>,
     #[cfg(target_os = "linux")]
     prev_idle: f64,
     #[cfg(target_os = "linux")]
@@ -188,11 +188,11 @@ pub struct DataCollector {
     #[cfg(feature = "battery")]
     battery_list: Option<Vec<Battery>>,
 
-    #[cfg(target_family = "unix")]
+    #[cfg(unix)]
     user_table: processes::UserTable,
 
     #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
-    gpu_pids: Option<Vec<HashMap<u32, (u64, u32)>>>,
+    gpu_pids: Option<Vec<IntMap<Pid, (u64, u32)>>>,
     #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     gpus_total_mem: Option<u64>,
     #[cfg(feature = "zfs")]
@@ -211,7 +211,7 @@ impl DataCollector {
             data: Data::default(),
             sys: SysinfoSource::default(),
             #[cfg(target_os = "linux")]
-            prev_process_details: HashMap::default(),
+            prev_process_details: IntMap::default(),
             #[cfg(target_os = "linux")]
             prev_idle: 0_f64,
             #[cfg(target_os = "linux")]
@@ -229,7 +229,7 @@ impl DataCollector {
             #[cfg(feature = "battery")]
             battery_list: None,
             filters,
-            #[cfg(target_family = "unix")]
+            #[cfg(unix)]
             user_table: Default::default(),
             #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_pids: None,
@@ -394,7 +394,7 @@ impl DataCollector {
     fn update_gpus(&mut self) {
         if self.widgets_to_harvest.use_gpu {
             let mut local_gpu: Vec<(String, memory::MemData)> = Vec::new();
-            let mut local_gpu_pids: Vec<HashMap<u32, (u64, u32)>> = Vec::new();
+            let mut local_gpu_pids: Vec<IntMap<Pid, (u64, u32)>> = Vec::new();
             let mut local_gpu_total_mem: u64 = 0;
             let mut local_gpu_data: Vec<gpu::GpuData> = Vec::new();
 
@@ -454,7 +454,7 @@ impl DataCollector {
         if self.widgets_to_harvest.use_cpu {
             self.data.cpu = cpu::get_cpu_data_list(&self.sys.system, self.show_average_cpu).ok();
 
-            #[cfg(target_family = "unix")]
+            #[cfg(unix)]
             {
                 self.data.load_avg = Some(cpu::get_load_avg());
             }

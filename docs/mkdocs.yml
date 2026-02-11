@@ -9,7 +9,7 @@ docs_dir: "content/"
 repo_name: ClementTsang/bottom
 repo_url: https://github.com/ClementTsang/bottom
 edit_uri: "edit/main/docs/content/"
-copyright: Copyright &copy; 2019 - 2024 Clement Tsang
+copyright: Copyright &copy; 2019 - 2026 Clement Tsang
 
 # Theming
 theme:
@@ -54,7 +54,7 @@ theme:
       toggle:
         icon: material/weather-night
         name: Switch to system preference
-  custom_dir: "content/overrides"
+  custom_dir: "overrides"
 extra_css:
   - stylesheets/extra.css
 
@@ -137,12 +137,18 @@ plugins:
   - git-revision-date-localized:
       type: date
   - privacy
+  - redirects:
+      redirect_maps:
+        nightly-release.md: "https://github.com/ClementTsang/bottom/releases"
 
 extra:
   # Versioning
   version:
     provider: mike
     default: stable
+    alias: true
+  # Used for the nightly banner
+  nightly: false
 
 # Navigation
 nav:
@@ -185,3 +191,10 @@ nav:
           - "Build Process": contribution/development/build_process.md
           - "Deploy Process": contribution/development/deploy_process.md
   - "Troubleshooting": troubleshooting.md
+
+hooks:
+  - ./hooks/nightly_redirect.py
+  - ./hooks/nightly_banner.py
+
+exclude_docs: |
+  nightly-release.md

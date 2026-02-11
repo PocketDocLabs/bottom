@@ -5,6 +5,8 @@
 # - MSI installer for Windows (.msi)
 # - .deb releases
 # - .rpm releases
+#
+# TODO: Break this up into scripts instead.
 
 name: "build releases"
 
@@ -31,7 +33,6 @@ permissions:
   contents: read
   attestations: write
 
-# TODO: Maybe add retry job in case of timeouts?
 jobs:
   build-binaries:
     name: "Build binaries"
@@ -79,7 +80,11 @@ jobs:
             }
 
           # macOS (x86-64 and aarch64)
-          - { os: "macos-15-intel", target: "x86_64-apple-darwin", cross: false }
+          - {
+              os: "macos-15-intel",
+              target: "x86_64-apple-darwin",
+              cross: false,
+            }
           - { os: "macos-15", target: "aarch64-apple-darwin", cross: false }
 
           # Windows (x86-64, x86)
@@ -122,7 +127,24 @@ jobs:
               cross: true,
             }
 
-          # Windows ARM
+          # Android
+          - {
+              os: "ubuntu-latest",
+              target: "aarch64-linux-android",
+              cross: true,
+              cross-version: "git:154b4ead7e639c7597d9e4e626b9c1c1e37608c0",
+              no-default-features: true,
+            }
+
+          # Loongarch
+          - {
+              os: "ubuntu-22.04",
+              target: "loongarch64-unknown-linux-gnu",
+              cross: true,
+              cross-version: "git:154b4ead7e639c7597d9e4e626b9c1c1e37608c0",
+            }
+
+          # Windows ARM, may promote to official.
           - {
               os: "windows-11-arm",
               target: "aarch64-pc-windows-msvc",
@@ -158,16 +180,27 @@ jobs:
           sh rustup.sh --default-toolchain stable -y
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+      - name: Set features
+        shell: bash
+        run: |
+          if [[ "${{ matrix.info.no-default-features }}" == "true" ]]; then
+            BUILD_FEATURES="--no-default-features"
+          else
+            BUILD_FEATURES="--features deploy"
+          fi
+          echo "Will build with the following features: $BUILD_FEATURES"
+          echo "BUILD_FEATURES=$BUILD_FEATURES" >> $GITHUB_ENV
+
       - name: Build
-        uses: ClementTsang/cargo-action@v0.0.7
+        uses: ClementTsang/cargo-action@2438cc5f3ba4e971289fffca2a00dedea6911f14 # v0.0.7
         env:
           BTM_GENERATE: true
           BTM_BUILD_RELEASE_CALLER: ${{ inputs.caller }}
         with:
           command: build
-          args: --release --locked --target=${{ matrix.info.target }} --features deploy
+          args: --release --locked --target=${{ matrix.info.target }} ${{ env.BUILD_FEATURES }}
           use-cross: ${{ matrix.info.cross }}
-          cross-version: 0.2.5
+          cross-version: ${{ matrix.info.cross-version || '0.2.5' }}
 
       - name: Move automatically generated completion/manpage
         shell: bash
@@ -175,17 +208,50 @@ jobs:
           mv "$COMPLETION_DIR" completion
           mv "$MANPAGE_DIR" manpage
 
-      - name: Bundle release and completion (Windows)
-        if: matrix.info.os == 'windows-2022'
+      - name: Determine signing slug for Windows signing
+        id: get-signing-slug
+        if: startsWith(matrix.info.os, 'windows')
         shell: bash
         run: |
-          cp target/${{ matrix.info.target }}/release/btm.exe btm.exe
+          mkdir -p signed
+          if [[ ${{ inputs.caller }} == "nightly" ]]; then
+            echo "slug=test-signing" >> $GITHUB_OUTPUT
+          else
+            echo "slug=release-signing" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload unsigned Windows artifact
+        id: upload-unsigned-artifact
+        if: startsWith(matrix.info.os, 'windows')
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+        with:
+          retention-days: 1
+          name: "unsigned-${{ matrix.info.target }}"
+          path: target/${{ matrix.info.target }}/release/btm.exe
+
+      - name: Sign Windows artifacts
+        if: startsWith(matrix.info.os, 'windows')
+        uses: signpath/github-action-submit-signing-request@3f9250c56651ff692d6729a2fbb0603a42d7d322 # v2.0
+        with:
+          api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
+          organization-id: "06b1a1ff-74e1-4d9d-93b1-fa8180c67727"
+          project-slug: "bottom"
+          signing-policy-slug: "${{ steps.get-signing-slug.outputs.slug }}"
+          github-artifact-id: "${{ steps.upload-unsigned-artifact.outputs.artifact-id }}"
+          wait-for-completion: true
+          output-artifact-directory: "signed"
+
+      - name: Bundle release and completion (Windows)
+        if: startsWith(matrix.info.os, 'windows')
+        shell: bash
+        run: |
+          mv signed/btm.exe btm.exe
           7z a bottom_${{ matrix.info.target }}.zip "btm.exe"
           7z a bottom_${{ matrix.info.target }}.zip "completion"
           echo "ASSET=bottom_${{ matrix.info.target }}.zip" >> $GITHUB_ENV
 
       - name: Bundle release and completion (Linux and macOS)
-        if: matrix.info.os != 'windows-2022'
+        if: ${{ !(startsWith(matrix.info.os, 'windows')) }}
         shell: bash
         run: |
           cp target/${{ matrix.info.target }}/release/btm ./btm
@@ -231,8 +297,8 @@ jobs:
           name: "release-${{ matrix.info.target }}"
           path: release
 
-  build-with-vm:
-    name: "Build binaries via VMs"
+  build-freebsd:
+    name: "Build FreeBSD binaries"
     runs-on: "ubuntu-latest"
     timeout-minutes: 12
     strategy:
@@ -244,21 +310,9 @@ jobs:
 
           # Alas, that's why we do it with VMs.
 
-          - {
-              type: "freebsd",
-              os_release: "15.0",
-              target: "x86_64-unknown-freebsd",
-            }
-          - {
-              type: "freebsd",
-              os_release: "14.3",
-              target: "x86_64-unknown-freebsd",
-            }
-          - {
-              type: "freebsd",
-              os_release: "13.5",
-              target: "x86_64-unknown-freebsd",
-            }
+          - { os_release: "15.0", target: "x86_64-unknown-freebsd" }
+          - { os_release: "14.3", target: "x86_64-unknown-freebsd" }
+          - { os_release: "13.5", target: "x86_64-unknown-freebsd" }
     steps:
       - name: Checkout repository
         if: matrix.info.container == ''
@@ -266,8 +320,8 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Build (FreeBSD)
-        if: ${{ matrix.info.type == 'freebsd' }}
+      # The VM jobs randomly fail, and since GHA can't retry, we retry manually.
+      - name: Build (Attempt 1)
         uses: vmactions/freebsd-vm@487ce35b96fae3e60d45b521735f5aa436ecfade # v1.2.4
         with:
           release: "${{ matrix.info.os_release }}"
@@ -280,6 +334,41 @@ jobs:
           run: |
             . "$HOME/.cargo/env"
             BTM_GENERATE=true BTM_BUILD_RELEASE_CALLER=${{ inputs.caller }} cargo build --release --locked --target=${{ matrix.info.target }} --features deploy
+        id: upload_attempt_1
+        continue-on-error: true
+
+      - name: Build (Attempt 2)
+        uses: vmactions/freebsd-vm@487ce35b96fae3e60d45b521735f5aa436ecfade # v1.2.4
+        with:
+          release: "${{ matrix.info.os_release }}"
+          envs: "RUST_BACKTRACE CARGO_INCREMENTAL CARGO_PROFILE_DEV_DEBUG CARGO_HUSKY_DONT_INSTALL_HOOKS COMPLETION_DIR MANPAGE_DIR"
+          usesh: true
+          prepare: |
+            pkg install -y curl bash
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs --output rustup.sh
+            sh rustup.sh --default-toolchain stable -y
+          run: |
+            . "$HOME/.cargo/env"
+            BTM_GENERATE=true BTM_BUILD_RELEASE_CALLER=${{ inputs.caller }} cargo build --release --locked --target=${{ matrix.info.target }} --features deploy
+        if: steps.upload_attempt_1.outcome == 'failure'
+        id: upload_attempt_2
+        continue-on-error: true
+
+      - name: Build (Attempt 3)
+        uses: vmactions/freebsd-vm@487ce35b96fae3e60d45b521735f5aa436ecfade # v1.2.4
+        with:
+          release: "${{ matrix.info.os_release }}"
+          envs: "RUST_BACKTRACE CARGO_INCREMENTAL CARGO_PROFILE_DEV_DEBUG CARGO_HUSKY_DONT_INSTALL_HOOKS COMPLETION_DIR MANPAGE_DIR"
+          usesh: true
+          prepare: |
+            pkg install -y curl bash
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs --output rustup.sh
+            sh rustup.sh --default-toolchain stable -y
+          run: |
+            . "$HOME/.cargo/env"
+            BTM_GENERATE=true BTM_BUILD_RELEASE_CALLER=${{ inputs.caller }} cargo build --release --locked --target=${{ matrix.info.target }} --features deploy
+        if: steps.upload_attempt_2.outcome == 'failure'
+        id: upload_attempt_3
 
       - name: Move automatically generated completion/manpage
         shell: bash
@@ -322,12 +411,12 @@ jobs:
           - {
               os: "windows-2022",
               target: "x86_64-pc-windows-msvc",
-              output: "bottom_x86_64_installer.msi"
+              output: "bottom_x86_64_installer.msi",
             }
           - {
               os: "windows-11-arm",
               target: "aarch64-pc-windows-msvc",
-              output: "bottom_aarch64_installer.msi"
+              output: "bottom_aarch64_installer.msi",
             }
     runs-on: ${{ matrix.info.os }}
     steps:
@@ -417,7 +506,7 @@ jobs:
             raw=$(git branch -r --contains '${{ github.ref_name }}');
             BRANCH=${raw##*/};
           fi
-          python ./scripts/cirrus/release.py "$BRANCH" "release/" "${{ inputs.caller }}"
+          python ./scripts/ci/cirrus_release.py "$BRANCH" "release/" "${{ inputs.caller }}"
 
       - name: Generate artifact attestation for file
         uses: actions/attest-build-provenance@6149ea5740be74af77f260b9db67e633f6b0a9a1 # v1.4.2
@@ -487,7 +576,7 @@ jobs:
 
       # TODO: Could I use the previous jobs to skip this call?
       - name: Build
-        uses: ClementTsang/cargo-action@v0.0.7
+        uses: ClementTsang/cargo-action@2438cc5f3ba4e971289fffca2a00dedea6911f14 # v0.0.7
         env:
           BTM_GENERATE: true
           BTM_BUILD_RELEASE_CALLER: ${{ inputs.caller }}
@@ -598,7 +687,7 @@ jobs:
 
       # TODO: Could I use the previous jobs to skip this call?
       - name: Build
-        uses: ClementTsang/cargo-action@v0.0.7
+        uses: ClementTsang/cargo-action@2438cc5f3ba4e971289fffca2a00dedea6911f14 # v0.0.7
         env:
           BTM_GENERATE: true
           BTM_BUILD_RELEASE_CALLER: ${{ inputs.caller }}
@@ -674,3 +763,48 @@ jobs:
           retention-days: 3
           name: release-build-rpm-${{ matrix.info.target }}
           path: release
+
+  test-installing:
+    name: "Test Installing"
+    runs-on: ${{ matrix.info.os }}
+    container: ${{ matrix.info.container }}
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        info:
+          - { os: "ubuntu-22.04", target: "x86_64-unknown-linux-gnu" }
+          - { os: "macos-15", target: "aarch64-apple-darwin" }
+          - { os: "windows-2022", target: "x86_64-pc-windows-msvc" }
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 1
+
+      - name: Read Rust version
+        shell: bash
+        run: |
+          VER=$(cat .github/ci/rust_version.txt)
+          echo "RUST_VERSION=$VER" >> $GITHUB_ENV
+          echo "$VER"
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
+        with:
+          toolchain: ${{ matrix.info.rust || env.RUST_VERSION }}
+          target: ${{ matrix.info.target }}
+
+      - name: Install (locked)
+        shell: bash
+        run: |
+          cargo install --path . --locked
+          btm -V
+          cargo uninstall bottom
+
+      - name: Install (not locked)
+        shell: bash
+        run: |
+          cargo install --path .
+          btm -V
+          cargo uninstall bottom

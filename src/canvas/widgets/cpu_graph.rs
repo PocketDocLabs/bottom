@@ -9,7 +9,7 @@ use crate::{
         Painter,
         components::{
             data_table::{DrawInfo, SelectionState},
-            time_graph::{GraphData, variants::percent::PercentTimeGraph},
+            time_graph::{GraphData, PercentTimeGraph},
         },
         drawing_utils::should_hide_x_label,
     },
@@ -188,7 +188,7 @@ impl Painter {
 
             // TODO: Maybe hide load avg if too long? Or maybe the CPU part.
             let title = {
-                #[cfg(target_family = "unix")]
+                #[cfg(unix)]
                 {
                     let load_avg = &data.load_avg_harvest;
                     let load_avg_str = format!(

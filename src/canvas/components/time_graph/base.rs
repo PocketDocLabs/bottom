@@ -1,8 +1,6 @@
-mod time_chart;
 use std::{borrow::Cow, time::Instant};
 
 use concat_string::concat_string;
-pub use time_chart::*;
 use tui::{
     Frame,
     layout::{Constraint, Rect},
@@ -12,7 +10,10 @@ use tui::{
     widgets::{BorderType, GraphType},
 };
 
-use crate::{app::data::Values, canvas::drawing_utils::widget_block};
+use crate::{
+    app::data::Values,
+    canvas::{components::time_graph::*, drawing_utils::widget_block},
+};
 
 /// Represents the data required by the [`TimeGraph`].
 ///
@@ -196,13 +197,11 @@ fn create_dataset(data: GraphData<'_>) -> Dataset<'_> {
         .data(time, values)
         .graph_type(GraphType::Line);
 
-    let dataset = if let Some(name) = name {
+    if let Some(name) = name {
         dataset.name(name)
     } else {
         dataset
-    };
-
-    dataset
+    }
 }
 
 #[cfg(test)]

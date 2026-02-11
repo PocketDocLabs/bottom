@@ -30,6 +30,9 @@ pub enum ProcColumn {
     State,
     User,
     Time,
+    #[cfg(unix)]
+    Nice,
+    Priority,
     #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     GpuMemValue,
     #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
@@ -63,6 +66,9 @@ impl ProcColumn {
             ProcColumn::GpuMemValue | ProcColumn::GpuMemPercent => &["GMem", "GMem%"],
             #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             ProcColumn::GpuUtilPercent => &["GPU%"],
+            #[cfg(unix)]
+            ProcColumn::Nice => &["Nice"],
+            ProcColumn::Priority => &["Priority"],
         }
     }
 }
@@ -85,6 +91,9 @@ impl ColumnHeader for ProcColumn {
             ProcColumn::State => "State",
             ProcColumn::User => "User",
             ProcColumn::Time => "Time",
+            #[cfg(unix)]
+            ProcColumn::Nice => "Nice",
+            ProcColumn::Priority => "Priority",
             #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             ProcColumn::GpuMemValue => "GMem",
             #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
@@ -103,6 +112,9 @@ impl ColumnHeader for ProcColumn {
             ProcColumn::Pid => "PID(p)".into(),
             ProcColumn::Name => "Name(n)".into(),
             ProcColumn::Command => "Command(n)".into(),
+            #[cfg(unix)]
+            ProcColumn::Nice => "Nice".into(),
+            ProcColumn::Priority => "Priority".into(),
             _ => self.text(),
         }
     }
@@ -167,6 +179,13 @@ impl SortsRow for ProcColumn {
             ProcColumn::Time => {
                 data.sort_by(|a, b| sort_partial_fn(descending)(a.time, b.time));
             }
+            ProcColumn::Priority => {
+                data.sort_by(|a, b| sort_partial_fn(descending)(a.priority, b.priority));
+            }
+            #[cfg(unix)]
+            ProcColumn::Nice => {
+                data.sort_by(|a, b| sort_partial_fn(descending)(a.nice, b.nice));
+            }
             #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             ProcColumn::GpuMemValue | ProcColumn::GpuMemPercent => {
                 data.sort_by(|a, b| {
@@ -189,7 +208,6 @@ impl<'de> Deserialize<'de> for ProcColumn {
         let value = String::deserialize(deserializer)?.to_lowercase();
         match value.as_str() {
             "cpu%" => Ok(ProcColumn::CpuPercent),
-            // TODO: Maybe change this in the future.
             "mem" | "mem%" => Ok(ProcColumn::MemPercent),
             "virt" | "virtual" | "virtmem" | "virtual memory" => Ok(ProcColumn::VirtualMem),
             "pid" => Ok(ProcColumn::Pid),
@@ -203,8 +221,10 @@ impl<'de> Deserialize<'de> for ProcColumn {
             "state" => Ok(ProcColumn::State),
             "user" => Ok(ProcColumn::User),
             "time" => Ok(ProcColumn::Time),
+            #[cfg(unix)]
+            "nice" => Ok(ProcColumn::Nice),
+            "priority" => Ok(ProcColumn::Priority),
             #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
-            // TODO: Maybe change this in the future.
             "gmem" | "gmem%" => Ok(ProcColumn::GpuMemPercent),
             #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             "gpu%" => Ok(ProcColumn::GpuUtilPercent),
@@ -230,6 +250,9 @@ impl From<&ProcColumn> for ProcWidgetColumn {
             ProcColumn::State => ProcWidgetColumn::State,
             ProcColumn::User => ProcWidgetColumn::User,
             ProcColumn::Time => ProcWidgetColumn::Time,
+            ProcColumn::Priority => ProcWidgetColumn::Priority,
+            #[cfg(unix)]
+            ProcColumn::Nice => ProcWidgetColumn::Nice,
             #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             ProcColumn::GpuMemPercent | ProcColumn::GpuMemValue => ProcWidgetColumn::GpuMem,
             #[cfg(any(feature = "gpu", feature = "apple-gpu"))]

@@ -9,8 +9,9 @@ use std::{
 };
 
 use concat_string::concat_string;
-use hashbrown::{HashMap, HashSet};
+use itertools::Itertools;
 use process::*;
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use sysinfo::ProcessStatus;
 
 use super::{Pid, ProcessHarvest, UserTable, process_status_str};
@@ -285,6 +286,9 @@ fn read_proc(
             #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
             gpu_util: 0,
             process_type,
+            #[cfg(unix)]
+            nice: stat.nice,
+            priority: stat.priority,
         },
         new_process_times,
     ))
@@ -309,7 +313,7 @@ fn binary_name_from_cmdline(cmdline: &str) -> String {
     }
 
     // Bit of a hack to handle cases like "firefox -blah"
-    let partial = &cmdline[start..end];
+    let partial = cmdline.chars().skip(start).take(end - start).join("");
     partial
         .split_once(" -")
         .map(|(name, _)| name.to_string())
@@ -387,7 +391,7 @@ pub(crate) fn linux_process_data(
 
     // TODO: Could maybe use a double buffer hashmap to avoid allocating this each time?
     // e.g. we swap which is prev and which is new.
-    let mut seen_pids: HashSet<Pid> = HashSet::new();
+    let mut seen_pids: HashSet<Pid> = HashSet::default();
 
     // Note this will only return PIDs of _processes_, not threads. You can get those from /proc/<PID>/task though.
     let pids = fs::read_dir("/proc")?.flatten().filter_map(|dir| {
@@ -411,7 +415,7 @@ pub(crate) fn linux_process_data(
 
     // TODO: Maybe pre-allocate these buffers in the future w/ routine cleanup.
     let mut buffer = String::new();
-    let mut process_threads_to_check = HashMap::new();
+    let mut process_threads_to_check = HashMap::default();
 
     let mut process_vector: Vec<ProcessHarvest> = pids
         .filter_map(|pid_path| {
@@ -429,7 +433,7 @@ pub(crate) fn linux_process_data(
                     if let Some(gpus) = &collector.gpu_pids {
                         gpus.iter().for_each(|gpu| {
                             // add mem/util for all gpus to pid
-                            if let Some((mem, util)) = gpu.get(&(pid as u32)) {
+                            if let Some((mem, util)) = gpu.get(&pid) {
                                 process_harvest.gpu_mem += mem;
                                 process_harvest.gpu_util += util;
                             }
@@ -554,6 +558,15 @@ mod tests {
         assert_eq!(
             binary_name_from_cmdline("firefox -contentproc -isForBrowser -prefsHandle 0"),
             "firefox"
+        );
+        assert_eq!(binary_name_from_cmdline("こんにちは\0"), "こんにちは");
+        assert_eq!(
+            binary_name_from_cmdline("こんにちは -こんばんは"),
+            "こんにちは"
+        );
+        assert_eq!(
+            binary_name_from_cmdline("/usr/bin/こんにちは -こんばんは\0"),
+            "こんにちは"
         );
     }
 }

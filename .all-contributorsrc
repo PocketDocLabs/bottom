@@ -665,6 +665,51 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "oxyzenQ",
+      "name": "rezky_nightky",
+      "avatar_url": "https://avatars.githubusercontent.com/u/130107241?v=4",
+      "profile": "https://github.com/oxyzenQ",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "gitgoggles",
+      "name": "gitgoggles",
+      "avatar_url": "https://avatars.githubusercontent.com/u/101480183?v=4",
+      "profile": "https://github.com/gitgoggles",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "thunze",
+      "name": "Tom",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22795263?v=4",
+      "profile": "https://github.com/thunze",
+      "contributions": [
+        "maintenance"
+      ]
+    },
+    {
+      "login": "ggaddy",
+      "name": "G",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13815367?v=4",
+      "profile": "https://github.com/ggaddy",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "lpnh",
+      "name": "Filipe Paniguel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90577992?v=4",
+      "profile": "https://github.com/lpnh",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
@@ -672,7 +717,7 @@
   "projectOwner": "ClementTsang",
   "repoType": "github",
   "repoHost": "https://github.com",
-  "skipCi": true,
+  "skipCi": false,
   "commitConvention": "angular",
   "commitType": "docs"
 }

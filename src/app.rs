@@ -8,8 +8,8 @@ use std::time::Instant;
 use concat_string::concat_string;
 use data::*;
 use filter::*;
-use hashbrown::HashMap;
 use layout_manager::*;
+use rustc_hash::FxHashMap as HashMap;
 pub use states::*;
 use unicode_segmentation::{GraphemeCursor, UnicodeSegmentation};
 
@@ -455,17 +455,35 @@ impl App {
             // Not the best way of doing things for now but works as glue.
             self.process_kill_dialog.on_enter();
         } else if !self.is_in_dialog() {
-            if let BottomWidgetType::ProcSort = self.current_widget.widget_type {
-                if let Some(proc_widget_state) = self
-                    .states
-                    .proc_state
-                    .widget_states
-                    .get_mut(&(self.current_widget.widget_id - 2))
-                {
-                    proc_widget_state.use_sort_table_value();
-                    self.move_widget_selection(&WidgetDirection::Right);
-                    self.is_force_redraw = true;
+            match self.current_widget.widget_type {
+                BottomWidgetType::ProcSearch => {
+                    if let Some(proc_widget_state) = self
+                        .states
+                        .proc_state
+                        .get_mut_widget_state(self.current_widget.widget_id - 1)
+                    {
+                        if proc_widget_state.is_search_enabled() {
+                            proc_widget_state.proc_search.search_state.is_enabled = false;
+                            self.move_widget_selection(&WidgetDirection::Up);
+                            self.is_force_redraw = true;
+                        }
+                    }
                 }
+                BottomWidgetType::ProcSort => {
+                    if let Some(proc_widget_state) = self
+                        .states
+                        .proc_state
+                        .get_mut_widget_state(self.current_widget.widget_id - 2)
+                    {
+                        proc_widget_state.use_sort_table_value();
+                        if proc_widget_state.is_sort_open {
+                            proc_widget_state.is_sort_open = false;
+                            self.move_widget_selection(&WidgetDirection::Right);
+                            self.is_force_redraw = true;
+                        }
+                    }
+                }
+                _ => {}
             }
         }
     }

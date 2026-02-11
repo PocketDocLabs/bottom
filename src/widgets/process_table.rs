@@ -5,12 +5,13 @@ mod sort_table;
 
 use std::{borrow::Cow, collections::BTreeMap};
 
-use hashbrown::{HashMap, HashSet};
 use indexmap::IndexSet;
 use itertools::Itertools;
+use nohash::IntMap;
 pub use process_columns::*;
 pub use process_data::*;
 use query::{ProcessQuery, parse_query};
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use sort_table::SortTableColumn;
 
 use crate::{
@@ -24,39 +25,28 @@ use crate::{
     },
     collection::processes::{Pid, ProcessHarvest},
     options::config::style::Styles,
+    widgets::query::QueryOptions,
 };
 
 /// ProcessSearchState only deals with process' search's current settings and
 /// state.
+#[derive(Default)]
 pub struct ProcessSearchState {
     pub search_state: AppSearchState,
-    pub is_ignoring_case: bool,
-    pub is_searching_whole_word: bool,
-    pub is_searching_with_regex: bool,
-}
-
-impl Default for ProcessSearchState {
-    fn default() -> Self {
-        ProcessSearchState {
-            search_state: AppSearchState::default(),
-            is_ignoring_case: true,
-            is_searching_whole_word: false,
-            is_searching_with_regex: false,
-        }
-    }
+    pub query_options: QueryOptions,
 }
 
 impl ProcessSearchState {
     pub fn search_toggle_ignore_case(&mut self) {
-        self.is_ignoring_case = !self.is_ignoring_case;
+        self.query_options.ignore_case = !self.query_options.ignore_case;
     }
 
     pub fn search_toggle_whole_word(&mut self) {
-        self.is_searching_whole_word = !self.is_searching_whole_word;
+        self.query_options.whole_word = !self.query_options.whole_word;
     }
 
     pub fn search_toggle_regex(&mut self) {
-        self.is_searching_with_regex = !self.is_searching_with_regex;
+        self.query_options.use_regex = !self.query_options.use_regex;
     }
 }
 
@@ -72,11 +62,11 @@ impl TreeCollapsed {
     pub(crate) fn new(default_collapsed: bool) -> Self {
         if default_collapsed {
             TreeCollapsed::DefaultCollapse {
-                expanded_pids: HashSet::new(),
+                expanded_pids: HashSet::default(),
             }
         } else {
             TreeCollapsed::DefaultExpand {
-                collapsed_pids: HashSet::new(),
+                collapsed_pids: HashSet::default(),
             }
         }
     }
@@ -164,6 +154,9 @@ fn make_column(column: ProcColumn) -> SortColumn<ProcColumn> {
         User => SortColumn::soft(User, Some(0.05)),
         State => SortColumn::hard(State, 9),
         Time => SortColumn::new(Time),
+        Priority => SortColumn::new(Priority).default_descending(),
+        #[cfg(unix)]
+        Nice => SortColumn::new(Nice),
         #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
         GpuMemValue => SortColumn::new(GpuMemValue).default_descending(),
         #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
@@ -197,6 +190,9 @@ pub enum ProcWidgetColumn {
     User,
     State,
     Time,
+    Priority,
+    #[cfg(unix)]
+    Nice,
     #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
     GpuMem,
     #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
@@ -339,6 +335,9 @@ impl ProcWidgetState {
                             ProcWidgetColumn::User => User,
                             ProcWidgetColumn::State => State,
                             ProcWidgetColumn::Time => Time,
+                            ProcWidgetColumn::Priority => Priority,
+                            #[cfg(unix)]
+                            ProcWidgetColumn::Nice => Nice,
                             #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                             ProcWidgetColumn::GpuMem => {
                                 if mem_as_values {
@@ -367,6 +366,8 @@ impl ProcWidgetState {
                         User,
                         State,
                         Time,
+                        Priority,
+                        // Maybe add nice back as a default when I can figure out how to do the default configs better for Windows? As currently otherwise there's a mismatch.
                     ];
 
                     default_columns.into_iter().map(make_column).collect()
@@ -392,6 +393,9 @@ impl ProcWidgetState {
                     State => ProcWidgetColumn::State,
                     User => ProcWidgetColumn::User,
                     Time => ProcWidgetColumn::Time,
+                    Priority => ProcWidgetColumn::Priority,
+                    #[cfg(unix)]
+                    Nice => ProcWidgetColumn::Nice,
                     #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
                     GpuMemValue | GpuMemPercent => ProcWidgetColumn::GpuMem,
                     #[cfg(any(feature = "gpu", feature = "apple-gpu"))]
@@ -554,10 +558,10 @@ impl ProcWidgetState {
         // - The process contains some descendant that matches.
         // - The process's parent (and only parent, not any ancestor) matches.
         let filtered_tree = {
-            let mut filtered_tree: HashMap<Pid, Vec<Pid>> = HashMap::default();
+            let mut filtered_tree: IntMap<Pid, Vec<Pid>> = IntMap::default();
 
             // We do a simple DFS traversal to build our filtered parent-to-tree mappings.
-            let mut visited_pids: HashMap<Pid, bool> = HashMap::default();
+            let mut visited_pids: IntMap<Pid, bool> = IntMap::default();
             let mut stack = orphan_pids
                 .iter()
                 .filter_map(|process| process_harvest.get(process))
@@ -1074,6 +1078,9 @@ impl ProcWidgetState {
         &self.proc_search.search_state.current_search_query
     }
 
+    /// Update the current search query.
+    ///
+    /// TODO: Maybe debounce this.
     pub fn update_query(&mut self) {
         if self
             .proc_search
@@ -1087,9 +1094,7 @@ impl ProcWidgetState {
         } else {
             match parse_query(
                 &self.proc_search.search_state.current_search_query,
-                self.proc_search.is_searching_whole_word,
-                self.proc_search.is_ignoring_case,
-                self.proc_search.is_searching_with_regex,
+                &self.proc_search.query_options,
             ) {
                 Ok(parsed_query) => {
                     self.proc_search.search_state.query = Some(parsed_query);
@@ -1138,9 +1143,7 @@ impl ProcWidgetState {
     #[cfg(test)]
     pub(crate) fn test_equality(&self, other: &Self) -> bool {
         self.mode == other.mode
-            && self.proc_search.is_ignoring_case == other.proc_search.is_ignoring_case
-            && self.proc_search.is_searching_whole_word == other.proc_search.is_searching_whole_word
-            && self.proc_search.is_searching_with_regex == other.proc_search.is_searching_with_regex
+            && self.proc_search.query_options == other.proc_search.query_options
             && self
                 .table
                 .columns
@@ -1191,7 +1194,7 @@ mod test {
             total_write: 0,
             process_state: "N/A",
             process_char: '?',
-            #[cfg(target_family = "unix")]
+            #[cfg(unix)]
             user: Some("root".into()),
             #[cfg(not(target_family = "unix"))]
             user: Some("N/A".into()),
@@ -1204,6 +1207,9 @@ mod test {
             gpu_usage: 0,
             #[cfg(target_os = "linux")]
             process_type: crate::collection::processes::ProcessType::Regular,
+            #[cfg(unix)]
+            nice: 0,
+            priority: -20,
         };
 
         let b = ProcWidgetData {
